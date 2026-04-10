@@ -2,4 +2,4 @@
 
 Quick access to the PDF document:
 
-- [ContractLens presentation](./ContractLens presentation.pdf)
+- [ContractLens presentation](./ContractLens%20presentation.pdf)
