@@ -49,3 +49,21 @@ class AnalysisResult(BaseModel):
     summary: str
     red_flags: List[RedFlag]
     similar_cases: List[SimilarCase]
+
+
+# ── Chat ──────────────────────────────────────────────────────────────────────
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    document_ids: List[str] = []
+    history: List[ChatMessage] = []
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    referenced_documents: List[dict]

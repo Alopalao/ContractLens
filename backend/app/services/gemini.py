@@ -18,6 +18,13 @@ _CONFIG = types.GenerateContentConfig(
     response_mime_type="application/json",
 )
 
+_CHAT_CONFIG = types.GenerateContentConfig(
+  temperature=0.2,
+  top_p=0.95,
+  top_k=40,
+  max_output_tokens=2048,
+)
+
 _client = genai.Client(api_key=GEMINI_API_KEY)
 
 ANALYSIS_PROMPT = """You are an expert legal analyst helping everyday users understand contracts and user agreements.
@@ -60,6 +67,30 @@ CONTRACT / AGREEMENT TEXT:
 {contract_text}
 """
 
+CHAT_PROMPT = """You are ContractLens, an assistant that answers user questions about contracts and user agreements.
+
+Use ONLY the provided document excerpts, saved analysis results, and conversation history as your grounding context.
+If the answer is not clearly supported by that context, say so directly.
+Do not invent legal citations, lawsuits, or facts.
+Do not present yourself as a lawyer.
+
+Answer from the user's perspective:
+- be plain-language and specific
+- point out practical risk
+- mention which uploaded document(s) you relied on by filename
+- when helpful, suggest what the user should double-check in the original text
+- add a brief disclaimer that this is not legal advice only when the question asks for legal recommendations
+
+CONVERSATION HISTORY:
+{history}
+
+DOCUMENT CONTEXT:
+{document_context}
+
+USER QUESTION:
+{question}
+"""
+
 
 async def analyze_contract(text: str) -> dict:
     prompt = ANALYSIS_PROMPT.format(contract_text=text[:50_000])
@@ -89,3 +120,45 @@ async def analyze_contract(text: str) -> dict:
             "red_flags": [],
             "similar_cases": [],
         }
+
+
+def _format_history(history: list[dict]) -> str:
+    if not history:
+        return "No prior conversation."
+
+    lines = []
+    for item in history[-8:]:
+        role = item.get("role", "user").upper()
+        content = (item.get("content") or "").strip()
+        if content:
+            lines.append(f"{role}: {content}")
+    return "\n".join(lines) if lines else "No prior conversation."
+
+
+def _format_documents(documents: list[dict]) -> str:
+    blocks = []
+    for index, doc in enumerate(documents, start=1):
+        analysis = json.dumps(doc.get("analysis") or {}, ensure_ascii=True)
+        document_text = (doc.get("document_text") or doc.get("preview_text") or "")[:12000]
+        blocks.append(
+            f"DOCUMENT {index}: {doc.get('filename', 'Untitled')}\n"
+            f"DOCUMENT_ID: {str(doc.get('_id', ''))}\n"
+            f"EXTRACTED_TEXT:\n{document_text}\n\n"
+            f"SAVED_ANALYSIS_JSON:\n{analysis}"
+        )
+    return "\n\n---\n\n".join(blocks) if blocks else "No documents were provided."
+
+
+async def chat_with_documents(question: str, documents: list[dict], history: list[dict] | None = None) -> str:
+    prompt = CHAT_PROMPT.format(
+        history=_format_history(history or []),
+        document_context=_format_documents(documents),
+        question=question.strip(),
+    )
+
+    response = await _client.aio.models.generate_content(
+        model=_MODEL,
+        contents=prompt,
+        config=_CHAT_CONFIG,
+    )
+    return (response.text or "").strip()

@@ -70,6 +70,7 @@ async def analyze_document(
         "user_id": str(current_user["_id"]),
         "filename": file.filename,
         "preview_text": text[:2000],
+        "document_text": text[:50000],
         "analysis": analysis,
         "created_at": datetime.utcnow(),
     }
@@ -125,6 +126,7 @@ async def get_document(doc_id: str, current_user=Depends(get_current_user)):
         "analysis": doc.get("analysis"),
         "created_at": doc["created_at"],
         "preview_text": doc.get("preview_text"),
+        "document_text": doc.get("document_text"),
     }
 
 
