@@ -49,9 +49,9 @@
       <div class="card about-section disclaimer">
         <h2>⚠️ Disclaimer</h2>
         <p>
-          ContractLens is an informational tool powered by AI. It does <strong>not</strong>
-          constitute legal advice. Always consult a qualified attorney before making legal
-          decisions based on a contract or agreement.
+          ContractLens is an informational tool powered by AI made by a student for an small hackaton.
+          It does <strong>not</strong> constitute legal advice. Always consult a qualified attorney 
+          before making legal decisions based on a contract or agreement.
         </p>
       </div>
     </div>
